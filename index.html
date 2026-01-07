@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starlight Nebula Pro | Full Display Edition</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        :root {
+            --cosmic-blue: #0a0a2a;
+            --neon-purple: #a855f7;
+            --star-cyan: #6ee7ff;
+            --nebula-pink: #ff6b9d;
+            --hazard-red: #ff4757;
+            --shield-green: #10b981;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: #000;
+            color: #e6f7ff;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Fullscreen canvas container */
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Floating UI Elements */
+        .ui-panel {
+            position: absolute;
+            background: rgba(10, 15, 35, 0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(110, 231, 255, 0.25);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .ui-panel:hover {
+            border-color: rgba(110, 231, 255, 0.5);
+            box-shadow: 0 10px 40px rgba(110, 231, 255, 0.3);
+        }
+
+        /* Stats Panel */
+        #stats-panel {
+            top: 30px;
+            right: 30px;
+            min-width: 280px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--star-cyan);
+            text-shadow: 0 0 15px rgba(110, 231, 255, 0.8);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(165, 216, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Controls Panel */
+        #controls-panel {
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(20, 25, 50, 0.9);
+        }
+
+        .control-btn {
+            background: rgba(30, 40, 80, 0.7);
+            border: 2px solid rgba(110, 231, 255, 0.3);
+            color: #a5d8ff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-family: 'Exo 2', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(50, 70, 120, 0.9);
+            border-color: var(--star-cyan);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(110, 231, 255, 0.4);
+            color: var(--star-cyan);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn i {
+            font-size: 20px;
+        }
+
+        /* Title Panel */
+        #title-panel {
+            top: 30px;
+            left: 30px;
+            padding: 25px 35px;
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--star-cyan), var(--neon-purple), var(--nebula-pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .game-subtitle {
+            font-size: 16px;
+            color: rgba(165, 216, 255, 0.8);
+            letter-spacing: 1px;
+        }
+
+        /* Overlay Screens */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, rgba(10, 15, 35, 0.95), rgba(5, 10, 25, 0.98));
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .overlay-content {
+            max-width: 800px;
+            text-align: center;
+            padding: 40px;
+            background: rgba(20, 25, 50, 0.9);
+            border-radius: 25px;
+            border: 2px solid rgba(110, 231, 255, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+        }
+
+        .overlay-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 64px;
+            background: linear-gradient(135deg, var(--star-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(110, 231, 255, 0.5);
+        }
+
+        .overlay-subtitle {
+            font-size: 24px;
+            color: #a5d8ff;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .overlay-stats {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin: 40px 0;
+        }
+
+        .overlay-stat {
+            text-align: center;
+        }
+
+        .overlay-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            color: var(--star-cyan);
+            text-shadow: 0 0 20px rgba(110, 231, 255, 0.7);
+        }
+
+        .overlay-stat-label {
+            font-size: 18px;
+            color: #a5d8ff;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--star-cyan), var(--neon-purple));
+            border: none;
+            color: #0a0a2a;
+            padding: 20px 60px;
+            border-radius: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(110, 231, 255, 0.4);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(110, 231, 255, 0.6);
+            letter-spacing: 3px;
+        }
+
+        .primary-btn:active {
+            transform: translateY(0);
+        }
+
+        .primary-btn i {
+            margin-right: 15px;
+        }
+
+        /* Instructions Panel */
+        #instructions-panel {
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            max-width: 320px;
+            opacity: 0.9;
+        }
+
+        .instructions-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            color: var(--star-cyan);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions-list {
+            list-style: none;
+        }
+
+        .instructions-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .instructions-list i {
+            color: var(--neon-purple);
+            font-size: 18px;
+            min-width: 24px;
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Fullscreen notification */
+        #fullscreen-notification {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 25, 50, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid var(--star-cyan);
+            color: var(--star-cyan);
+            font-family: 'Orbitron', sans-serif;
+            z-index: 1001;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            #instructions-panel {
+                display: none;
+            }
+            
+            .overlay-title {
+                font-size: 48px;
+            }
+            
+            .stat-value {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #title-panel, #stats-panel {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            
+            #controls-panel {
+                flex-wrap: wrap;
+                width: 90%;
+            }
+            
+            .control-btn {
+                min-width: 120px;
+                padding: 12px 20px;
+            }
+            
+            .overlay-content {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            .overlay-title {
+                font-size: 36px;
+            }
+            
+            .overlay-subtitle {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Game Container -->
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- UI Panels -->
+    <div id="title-panel" class="ui-panel">
+        <h1 class="game-title">NEBULA RUSH</h1>
+        <p class="game-subtitle">APPLE EDITION</p>
+    </div>
+
+    <div id="stats-panel" class="ui-panel">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Stardust</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="lives">3</div>
+                <div class="stat-label">Shield</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="level">1</div>
+                <div class="stat-label">Nebula</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="time">90</div>
+                <div class="stat-label">Time</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="instructions-panel" class="ui-panel">
+        <h3 class="instructions-title"><i class="fas fa-gamepad"></i> CONTROLS</h3>
+        <ul class="instructions-list">
+            <li><i class="fas fa-mouse-pointer"></i> <span>Move mouse to navigate</span></li>
+            <li><i class="fas fa-mouse"></i> <span>Click to boost speed</span></li>
+            <li><i class="fas fa-star"></i> <span>Collect stardust for points</span></li>
+            <li><i class="fas fa-bolt"></i> <span>Avoid cosmic hazards</span></li>
+            <li><i class="fas fa-shield-alt"></i> <span>Collect shields for protection</span></li>
+            <li><i class="fas fa-space-shuttle"></i> <span>Reach nebula levels</span></li>
+            <li><i class="fas fa-keyboard"></i> <span>SPACE: Pause | M: Sound | F: Fullscreen</span></li>
+            <li><i class="fas fa-keyboard"></i> <span>Press H to hide the helper</span></li>
+        </ul>
+    </div>
+
+    <div id="controls-panel" class="ui-panel">
+        <button class="control-btn" id="pause-btn">
+            <i class="fas fa-pause"></i> PAUSE
+        </button>
+        <button class="control-btn" id="sound-btn">
+            <i class="fas fa-volume-up"></i> SOUND ON
+        </button>
+        <button class="control-btn" id="fullscreen-btn">
+            <i class="fas fa-expand"></i> FULLSCREEN
+        </button>
+        <button class="control-btn" id="help-btn">
+            <i class="fas fa-question-circle"></i> HELP
+        </button>
+    </div>
+
+    <!-- Overlay Screens -->
+    <div id="start-overlay" class="overlay">
+        <div class="overlay-content">
+            <h1 class="overlay-title">Nebula Rush </h1>
+            <p class="overlay-subtitle">Experience cosmic exploration in full display glory. Navigate through vibrant nebulas, collect stardust, and survive the hazards of deep space.</p>
+            
+            <div class="overlay-stats">
+                <div class="overlay-stat">
+                    <div class="overlay-stat-value" id="high-score">0</div>
+                    <div class="overlay-stat-label">High Score</div>
+                </div>
+                <div class="overlay-stat">
+                    <div class="overlay-stat-value" id="games-played">0</div>
+                    <div class="overlay-stat-label">Games Played</div>
+                </div>
+                <div class="overlay-stat">
+                    <div class="overlay-stat-value" id="total-stardust">0</div>
+                    <div class="overlay-stat-label">Total Stardust</div>
+                </div>
+            </div>
+            
+            <button class="primary-btn" id="start-btn">
+                <i class="fas fa-rocket"></i> LAUNCH MISSION
+            </button>
+            
+            <p style="margin-top: 30px; color: rgba(165, 216, 255, 0.7); font-size: 14px;">
+                Press F11 or click Fullscreen for the best experience
+            </p>
+        </div>
+    </div>
+
+    <div id="game-over-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <h1 class="overlay-title" id="game-over-title">MISSION COMPLETE</h1>
+            <p class="overlay-subtitle" id="game-over-subtitle">Your journey through the nebula has ended.</p>
+            
+            <div class="overlay-stats">
+                <div class="overlay-stat">
+                    <div class="overlay-stat-value" id="final-score">0</div>
+                    <div class="overlay-stat-label">Stardust Collected</div>
+                </div>
+                <div class="overlay-stat">
+                    <div class="overlay-stat-value" id="final-level">1</div>
+                    <div class="overlay-stat-label">Nebula Reached</div>
+                </div>
+                <div class="overlay-stat">
+                    <div class="overlay-stat-value" id="final-time">0</div>
+                    <div class="overlay-stat-label">Time Remaining</div>
+                </div>
+            </div>
+            
+            <div style="margin: 40px 0;">
+                <div style="color: var(--star-cyan); font-size: 20px; margin-bottom: 10px;">
+                    <i class="fas fa-trophy"></i> NEW HIGH SCORE!
+                </div>
+                <div style="color: #a5d8ff;" id="new-records"></div>
+            </div>
+            
+            <button class="primary-btn" id="restart-btn">
+                <i class="fas fa-redo"></i> NEW MISSION
+            </button>
+        </div>
+    </div>
+
+    <!-- Fullscreen Notification -->
+    <div id="fullscreen-notification" class="hidden">
+        <i class="fas fa-expand"></i> Press F11 for Fullscreen Experience
+    </div>
+
+    <script>
+        // Enhanced Full Display Game Engine
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Get all UI elements
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const levelElement = document.getElementById('level');
+        const timeElement = document.getElementById('time');
+        const highScoreElement = document.getElementById('high-score');
+        const gamesPlayedElement = document.getElementById('games-played');
+        const totalStardustElement = document.getElementById('total-stardust');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalLevelElement = document.getElementById('final-level');
+        const finalTimeElement = document.getElementById('final-time');
+        const newRecordsElement = document.getElementById('new-records');
+        const gameOverTitle = document.getElementById('game-over-title');
+        const gameOverSubtitle = document.getElementById('game-over-subtitle');
+        
+        // Buttons
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const soundBtn = document.getElementById('sound-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const helpBtn = document.getElementById('help-btn');
+        
+        // Overlays
+        const startOverlay = document.getElementById('start-overlay');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        const instructionsPanel = document.getElementById('instructions-panel');
+        const fullscreenNotification = document.getElementById('fullscreen-notification');
+        
+        // Game state
+        const game = {
+            running: false,
+            paused: false,
+            soundOn: true,
+            score: 0,
+            highScore: localStorage.getItem('nebulaHighScore') || 0,
+            gamesPlayed: localStorage.getItem('nebulaGamesPlayed') || 0,
+            totalStardust: localStorage.getItem('nebulaTotalStardust') || 0,
+            lives: 3,
+            level: 1,
+            time: 90,
+            player: {
+                x: 0,
+                y: 0,
+                radius: 25,
+                speed: 6,
+                color: '#6ee7ff',
+                trail: [],
+                maxTrail: 20,
+                angle: 0
+            },
+            stardust: [],
+            hazards: [],
+            shields: [],
+            particles: [],
+            backgrounds: [],
+            powerUps: [],
+            lastTime: 0,
+            mouseX: 0,
+            mouseY: 0,
+            isBoosting: false,
+            levelTarget: 12,
+            collectedInLevel: 0,
+            shakeIntensity: 0,
+            screenWidth: 0,
+            screenHeight: 0
+        };
+
+        // Initialize
+        function init() {
+            resizeCanvas();
+            updateStatsDisplay();
+            
+            // Create initial background stars
+            createBackgroundStars(200);
+            
+            // Show fullscreen notification
+            setTimeout(() => {
+                if (!document.fullscreenElement) {
+                    fullscreenNotification.classList.remove('hidden');
+                    setTimeout(() => {
+                        fullscreenNotification.classList.add('hidden');
+                    }, 5000);
+                }
+            }, 1000);
+        }
+
+        // Resize canvas to full display
+        function resizeCanvas() {
+            game.screenWidth = window.innerWidth;
+            game.screenHeight = window.innerHeight;
+            
+            canvas.width = game.screenWidth;
+            canvas.height = game.screenHeight;
+            
+            // Center player
+            game.player.x = game.screenWidth / 2;
+            game.player.y = game.screenHeight / 2;
+        }
+
+        // Update stats display
+        function updateStatsDisplay() {
+            highScoreElement.textContent = game.highScore;
+            gamesPlayedElement.textContent = game.gamesPlayed;
+            totalStardustElement.textContent = game.totalStardust;
+        }
+
+        // Create background stars
+        function createBackgroundStars(count) {
+            game.backgrounds = [];
+            for (let i = 0; i < count; i++) {
+                game.backgrounds.push({
+                    x: Math.random() * game.screenWidth,
+                    y: Math.random() * game.screenHeight,
+                    size: Math.random() * 3 + 1,
+                    brightness: Math.random() * 0.5 + 0.5,
+                    speed: Math.random() * 0.5 + 0.1,
+                    twinkle: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        // Create stardust
+        function createStardust(count = 8) {
+            for (let i = 0; i < count; i++) {
+                game.stardust.push({
+                    x: Math.random() * game.screenWidth,
+                    y: Math.random() * game.screenHeight,
+                    radius: Math.random() * 10 + 5,
+                    color: getRandomColor(),
+                    speed: Math.random() * 1.5 + 0.5,
+                    pulse: Math.random() * 0.05,
+                    pulseDirection: 1,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.05
+                });
+            }
+        }
+
+        // Create hazards
+        function createHazards(count = 4) {
+            for (let i = 0; i < count; i++) {
+                const size = Math.random() * 30 + 20;
+                const hazardTypes = ['spike', 'crystal', 'orb'];
+                const type = hazardTypes[Math.floor(Math.random() * hazardTypes.length)];
+                
+                game.hazards.push({
+                    x: Math.random() * game.screenWidth,
+                    y: Math.random() * game.screenHeight,
+                    radius: size,
+                    color: type === 'spike' ? '#ff4757' : type === 'crystal' ? '#ffa502' : '#ff6b8b',
+                    speedX: (Math.random() - 0.5) * 4,
+                    speedY: (Math.random() - 0.5) * 4,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.03,
+                    type: type
+                });
+            }
+        }
+
+        // Create shield
+        function createShield() {
+            game.shields.push({
+                x: Math.random() * game.screenWidth,
+                y: Math.random() * game.screenHeight,
+                radius: 20,
+                color: '#10b981',
+                pulse: 0,
+                pulseDirection: 1,
+                rotation: 0,
+                rotationSpeed: 0.02
+            });
+        }
+
+        // Create power-up
+        function createPowerUp() {
+            const types = ['time', 'score', 'speed'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            let color, icon;
+            
+            switch(type) {
+                case 'time': color = '#6ee7ff'; icon = '⏱️'; break;
+                case 'score': color = '#ffd700'; icon = '⭐'; break;
+                case 'speed': color = '#ff6b9d'; icon = '⚡'; break;
+            }
+            
+            game.powerUps.push({
+                x: Math.random() * game.screenWidth,
+                y: Math.random() * game.screenHeight,
+                radius: 18,
+                color: color,
+                type: type,
+                icon: icon,
+                pulse: 0,
+                pulseDirection: 1,
+                rotation: 0,
+                rotationSpeed: 0.03
+            });
+        }
+
+        // Get random cosmic color
+        function getRandomColor() {
+            const colors = ['#6ee7ff', '#a855f7', '#ff6b9d', '#60a5fa', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Create particles
+        function createParticles(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 2;
+                
+                game.particles.push({
+                    x: x,
+                    y: y,
+                    radius: Math.random() * 5 + 2,
+                    color: color,
+                    speedX: Math.cos(angle) * speed,
+                    speedY: Math.sin(angle) * speed,
+                    life: 1.0,
+                    decay: Math.random() * 0.03 + 0.02,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.1
+                });
+            }
+        }
+
+        // Screen shake effect
+        function applyScreenShake() {
+            if (game.shakeIntensity > 0) {
+                const shakeX = (Math.random() - 0.5) * game.shakeIntensity;
+                const shakeY = (Math.random() - 0.5) * game.shakeIntensity;
+                
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
+                
+                game.shakeIntensity *= 0.9;
+                if (game.shakeIntensity < 0.1) game.shakeIntensity = 0;
+            }
+        }
+
+        // Draw functions
+        function drawBackground() {
+            // Draw space gradient
+            const gradient = ctx.createRadialGradient(
+                game.screenWidth / 2, game.screenHeight / 2, 0,
+                game.screenWidth / 2, game.screenHeight / 2, Math.max(game.screenWidth, game.screenHeight) / 2
+            );
+            gradient.addColorStop(0, 'rgba(10, 10, 42, 0.1)');
+            gradient.addColorStop(1, 'rgba(5, 5, 25, 0.8)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, game.screenWidth, game.screenHeight);
+            
+            // Draw stars
+            game.backgrounds.forEach(star => {
+                star.twinkle += 0.02;
+                const brightness = star.brightness + Math.sin(star.twinkle) * 0.3;
+                
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+                ctx.fill();
+                
+                // Move stars slowly
+                star.x -= star.speed;
+                if (star.x < -10) {
+                    star.x = game.screenWidth + 10;
+                    star.y = Math.random() * game.screenHeight;
+                }
+            });
+            
+            // Draw nebula effects
+            drawNebulaEffects();
+        }
+
+        function drawNebulaEffects() {
+            // Create multiple nebula layers
+            for (let i = 0; i < 3; i++) {
+                const time = Date.now() * 0.0005 + i * 100;
+                const x = Math.sin(time + i) * 100 + game.screenWidth / 2;
+                const y = Math.cos(time * 0.7 + i) * 100 + game.screenHeight / 2;
+                const radius = 300 + Math.sin(time * 0.3) * 50;
+                
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                const colors = [
+                    ['#6ee7ff', 0.1],
+                    ['#a855f7', 0.05],
+                    ['#ff6b9d', 0]
+                ][i % 3];
+                
+                gradient.addColorStop(0, `${colors[0]}${Math.floor(colors[1] * 255).toString(16).padStart(2, '0')}`);
+                gradient.addColorStop(1, `${colors[0]}00`);
+                
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+        }
+
+        function drawPlayer() {
+            // Update player angle based on movement
+            if (game.player.trail.length > 1) {
+                const lastPoint = game.player.trail[1] || game.player.trail[0];
+                if (lastPoint) {
+                    game.player.angle = Math.atan2(
+                        game.player.y - lastPoint.y,
+                        game.player.x - lastPoint.x
+                    );
+                }
+            }
+            
+            // Draw trail
+            ctx.lineWidth = 3;
+            for (let i = 0; i < game.player.trail.length; i++) {
+                const point = game.player.trail[i];
+                const alpha = (i / game.player.trail.length) * 0.6;
+                const radius = game.player.radius * (i / game.player.trail.length);
+                
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(110, 231, 255, ${alpha})`;
+                ctx.fill();
+            }
+            
+            // Draw player ship
+            ctx.save();
+            ctx.translate(game.player.x, game.player.y);
+            ctx.rotate(game.player.angle);
+            
+            // Ship body
+            ctx.beginPath();
+            ctx.moveTo(game.player.radius, 0);
+            ctx.lineTo(-game.player.radius * 0.7, -game.player.radius * 0.5);
+            ctx.lineTo(-game.player.radius * 0.7, game.player.radius * 0.5);
+            ctx.closePath();
+            
+            const gradient = ctx.createLinearGradient(
+                game.player.radius, 0,
+                -game.player.radius, 0
+            );
+            gradient.addColorStop(0, game.player.color);
+            gradient.addColorStop(1, '#a855f7');
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Engine glow
+            if (game.isBoosting) {
+                ctx.beginPath();
+                ctx.moveTo(-game.player.radius * 0.7, -game.player.radius * 0.3);
+                ctx.lineTo(-game.player.radius * 1.5, 0);
+                ctx.lineTo(-game.player.radius * 0.7, game.player.radius * 0.3);
+                
+                const engineGradient = ctx.createLinearGradient(
+                    -game.player.radius * 0.7, 0,
+                    -game.player.radius * 2, 0
+                );
+                engineGradient.addColorStop(0, '#ff6b9d');
+                engineGradient.addColorStop(1, 'rgba(255, 107, 157, 0)');
+                
+                ctx.fillStyle = engineGradient;
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        function drawStardust() {
+            game.stardust.forEach(dust => {
+                dust.pulse += 0.05 * dust.pulseDirection;
+                dust.rotation += dust.rotationSpeed;
+                
+                if (dust.pulse > 0.5 || dust.pulse < 0) {
+                    dust.pulseDirection *= -1;
+                }
+                
+                const currentRadius = dust.radius + dust.pulse * 3;
+                
+                ctx.save();
+                ctx.translate(dust.x, dust.y);
+                ctx.rotate(dust.rotation);
+                
+                // Outer glow
+                ctx.beginPath();
+                ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, currentRadius);
+                gradient.addColorStop(0, dust.color);
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Inner star
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * Math.PI * 2) / 5;
+                    const spike = currentRadius * 0.5;
+                    const x = Math.cos(angle) * spike;
+                    const y = Math.sin(angle) * spike;
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                
+                ctx.restore();
+            });
+        }
+
+        // Draw other game objects (similar structure as before)
+        function drawHazards() {
+            game.hazards.forEach(hazard => {
+                hazard.rotation += hazard.rotationSpeed;
+                
+                ctx.save();
+                ctx.translate(hazard.x, hazard.y);
+                ctx.rotate(hazard.rotation);
+                
+                ctx.beginPath();
+                
+                switch(hazard.type) {
+                    case 'spike':
+                        // Spikey asteroid
+                        ctx.moveTo(0, -hazard.radius);
+                        for (let i = 0; i < 8; i++) {
+                            const angle = (i * Math.PI) / 4;
+                            const spikeLength = hazard.radius * 0.7;
+                            ctx.lineTo(
+                                Math.sin(angle) * spikeLength,
+                                -Math.cos(angle) * spikeLength
+                            );
+                            const nextAngle = ((i + 1) * Math.PI) / 4;
+                            ctx.lineTo(
+                                Math.sin(nextAngle) * hazard.radius,
+                                -Math.cos(nextAngle) * hazard.radius
+                            );
+                        }
+                        break;
+                        
+                    case 'crystal':
+                        // Crystal shape
+                        for (let i = 0; i < 6; i++) {
+                            const angle = (i * Math.PI) / 3;
+                            const x = Math.cos(angle) * hazard.radius;
+                            const y = Math.sin(angle) * hazard.radius;
+                            if (i === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                        break;
+                        
+                    default:
+                        // Orb
+                        ctx.arc(0, 0, hazard.radius, 0, Math.PI * 2);
+                }
+                
+                ctx.closePath();
+                
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, hazard.radius);
+                gradient.addColorStop(0, hazard.color);
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.restore();
+            });
+        }
+
+        // Update game state
+        function updateGame() {
+            // Update player position based on mouse
+            const dx = game.mouseX - game.player.x;
+            const dy = game.mouseY - game.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 1) {
+                const speed = game.isBoosting ? game.player.speed * 1.8 : game.player.speed;
+                game.player.x += dx * 0.04 * speed;
+                game.player.y += dy * 0.04 * speed;
+                
+                // Add to trail
+                game.player.trail.unshift({x: game.player.x, y: game.player.y});
+                if (game.player.trail.length > game.player.maxTrail) {
+                    game.player.trail.pop();
+                }
+            }
+            
+            // Keep player within bounds
+            game.player.x = Math.max(game.player.radius, Math.min(game.screenWidth - game.player.radius, game.player.x));
+            game.player.y = Math.max(game.player.radius, Math.min(game.screenHeight - game.player.radius, game.player.y));
+            
+            // Update stardust
+            game.stardust.forEach((dust, index) => {
+                // Float animation
+                dust.x += Math.sin(Date.now() * 0.001 + dust.y * 0.01) * dust.speed * 0.3;
+                dust.y += Math.cos(Date.now() * 0.001 + dust.x * 0.01) * dust.speed * 0.3;
+                
+                // Check collision with player
+                const dist = Math.sqrt(
+                    Math.pow(dust.x - game.player.x, 2) + 
+                    Math.pow(dust.y - game.player.y, 2)
+                );
+                
+                if (dist < dust.radius + game.player.radius) {
+                    // Collect stardust
+                    const points = Math.floor(dust.radius);
+                    game.score += points;
+                    game.totalStardust += points;
+                    game.collectedInLevel++;
+                    
+                    scoreElement.textContent = game.score;
+                    
+                    // Effects
+                    createParticles(dust.x, dust.y, dust.color, 20);
+                    game.shakeIntensity = 2;
+                    
+                    // Sound
+                    playSound(800 + dust.radius * 30, 0.2);
+                    
+                    // Remove and replace
+                    game.stardust.splice(index, 1);
+                    createStardust(1);
+                }
+            });
+            
+            // Update hazards (similar collision logic)
+            game.hazards.forEach((hazard, index) => {
+                hazard.x += hazard.speedX;
+                hazard.y += hazard.speedY;
+                
+                // Bounce off walls
+                if (hazard.x < hazard.radius || hazard.x > game.screenWidth - hazard.radius) {
+                    hazard.speedX *= -1;
+                }
+                if (hazard.y < hazard.radius || hazard.y > game.screenHeight - hazard.radius) {
+                    hazard.speedY *= -1;
+                }
+                
+                // Check collision
+                const dist = Math.sqrt(
+                    Math.pow(hazard.x - game.player.x, 2) + 
+                    Math.pow(hazard.y - game.player.y, 2)
+                );
+                
+                if (dist < hazard.radius + game.player.radius) {
+                    // Hit hazard
+                    game.lives--;
+                    livesElement.textContent = game.lives;
+                    
+                    // Effects
+                    createParticles(game.player.x, game.player.y, hazard.color, 30);
+                    game.shakeIntensity = 10;
+                    
+                    // Sound
+                    playSound(200, 0.4);
+                    
+                    // Push player away
+                    const pushX = game.player.x - hazard.x;
+                    const pushY = game.player.y - hazard.y;
+                    const pushDist = Math.sqrt(pushX * pushX + pushY * pushY);
+                    
+                    game.player.x += (pushX / pushDist) * 40;
+                    game.player.y += (pushY / pushDist) * 40;
+                    
+                    // Remove hazard
+                    game.hazards.splice(index, 1);
+                    createHazards(1);
+                    
+                    // Check game over
+                    if (game.lives <= 0) {
+                        endGame();
+                    }
+                }
+            });
+            
+            // Update shields and power-ups (similar logic)
+            // ...
+            
+            // Check level completion
+            if (game.collectedInLevel >= game.levelTarget) {
+                nextLevel();
+            }
+            
+            // Update time
+            const currentTime = Date.now();
+            if (currentTime - game.lastTime > 1000) {
+                game.time--;
+                timeElement.textContent = game.time;
+                game.lastTime = currentTime;
+                
+                if (game.time <= 0) {
+                    endGame();
+                }
+            }
+        }
+
+        function nextLevel() {
+            game.level++;
+            game.collectedInLevel = 0;
+            game.levelTarget += 5;
+            game.time += 20;
+            
+            levelElement.textContent = game.level;
+            timeElement.textContent = game.time;
+            
+            // Add more game objects
+            createStardust(5);
+            createHazards(2);
+            
+            // Chance for power-up
+            if (Math.random() > 0.6) createPowerUp();
+            if (Math.random() > 0.7) createShield();
+            
+            // Level up effects
+            createParticles(game.screenWidth / 2, game.screenHeight / 2, '#6ee7ff', 50);
+            game.shakeIntensity = 5;
+            playSound(1200, 0.5);
+        }
+
+        function drawGame() {
+            // Clear with fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, game.screenWidth, game.screenHeight);
+            
+            // Apply screen shake
+            applyScreenShake();
+            
+            // Draw all game elements
+            drawBackground();
+            drawStardust();
+            drawHazards();
+            // Draw shields, power-ups, particles...
+            drawPlayer();
+            
+            // Reset transform if shake was applied
+            if (game.shakeIntensity > 0) {
+                ctx.restore();
+            }
+        }
+
+        function gameLoop() {
+            if (!game.running || game.paused) return;
+            
+            updateGame();
+            drawGame();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            // Reset game state
+            game.running = true;
+            game.paused = false;
+            game.score = 0;
+            game.lives = 3;
+            game.level = 1;
+            game.time = 90;
+            game.collectedInLevel = 0;
+            game.levelTarget = 12;
+            
+            // Clear arrays
+            game.stardust = [];
+            game.hazards = [];
+            game.shields = [];
+            game.powerUps = [];
+            game.particles = [];
+            game.player.trail = [];
+            
+            // Create initial objects
+            createStardust(15);
+            createHazards(3);
+            
+            // Update UI
+            scoreElement.textContent = game.score;
+            livesElement.textContent = game.lives;
+            levelElement.textContent = game.level;
+            timeElement.textContent = game.time;
+            
+            // Hide overlays
+            startOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+            
+            // Update games played
+            game.gamesPlayed++;
+            localStorage.setItem('nebulaGamesPlayed', game.gamesPlayed);
+            
+            // Start game loop
+            game.lastTime = Date.now();
+            gameLoop();
+            
+            // Start music/audio
+            playSound(600, 0.3);
+        }
+
+        function endGame() {
+            game.running = false;
+            
+            // Update high score
+            if (game.score > game.highScore) {
+                game.highScore = game.score;
+                localStorage.setItem('nebulaHighScore', game.highScore);
+                newRecordsElement.innerHTML = '<i class="fas fa-crown"></i> New High Score!';
+            }
+            
+            // Update total stardust
+            localStorage.setItem('nebulaTotalStardust', game.totalStardust);
+            
+            // Update final stats
+            finalScoreElement.textContent = game.score;
+            finalLevelElement.textContent = game.level;
+            finalTimeElement.textContent = game.time;
+            
+            // Set game over message
+            if (game.lives <= 0) {
+                gameOverTitle.textContent = 'SHIELD DEPLETED';
+                gameOverSubtitle.textContent = 'Your ship could not withstand the cosmic hazards.';
+            } else if (game.time <= 0) {
+                gameOverTitle.textContent = 'TIME EXPIRED';
+                gameOverSubtitle.textContent = 'The nebula collapsed before you could escape.';
+            } else {
+                gameOverTitle.textContent = 'MISSION COMPLETE';
+                gameOverSubtitle.textContent = 'You successfully navigated the cosmic nebula.';
+            }
+            
+            // Show game over screen
+            gameOverOverlay.classList.remove('hidden');
+            
+            // Play game over sound
+            playSound(300, 0.5);
+        }
+
+        function playSound(freq, duration) {
+            if (!game.soundOn) return;
+            
+            // Web Audio API implementation
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = freq;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log("Audio error:", e);
+            }
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        
+        pauseBtn.addEventListener('click', () => {
+            if (!game.running) return;
+            game.paused = !game.paused;
+            pauseBtn.innerHTML = game.paused ? 
+                '<i class="fas fa-play"></i> RESUME' : 
+                '<i class="fas fa-pause"></i> PAUSE';
+            
+            if (!game.paused) gameLoop();
+        });
+        
+        soundBtn.addEventListener('click', () => {
+            game.soundOn = !game.soundOn;
+            soundBtn.innerHTML = game.soundOn ? 
+                '<i class="fas fa-volume-up"></i> SOUND ON' : 
+                '<i class="fas fa-volume-mute"></i> SOUND OFF';
+        });
+        
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(console.log);
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i> EXIT FULLSCREEN';
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> FULLSCREEN';
+            }
+        });
+        
+        helpBtn.addEventListener('click', () => {
+            instructionsPanel.classList.toggle('hidden');
+        });
+        
+        // Mouse events
+        document.addEventListener('mousemove', (e) => {
+            game.mouseX = e.clientX;
+            game.mouseY = e.clientY;
+        });
+        
+        document.addEventListener('mousedown', () => {
+            if (game.running) {
+                game.isBoosting = true;
+                playSound(400, 0.1);
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            game.isBoosting = false;
+        });
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    if (!game.running) startGame();
+                    else pauseBtn.click();
+                    break;
+                case 'KeyM':
+                    soundBtn.click();
+                    break;
+                case 'KeyF':
+                    fullscreenBtn.click();
+                    break;
+                case 'KeyH':
+                    helpBtn.click();
+                    break;
+                case 'Escape':
+                    if (game.running) pauseBtn.click();
+                    break;
+            }
+        });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            createBackgroundStars(200);
+            
+            if (!game.running) {
+                drawBackground();
+                drawPlayer();
+            }
+        });
+        
+        // Fullscreen change
+        document.addEventListener('fullscreenchange', () => {
+            fullscreenBtn.innerHTML = document.fullscreenElement ? 
+                '<i class="fas fa-compress"></i> EXIT FULLSCREEN' : 
+                '<i class="fas fa-expand"></i> FULLSCREEN';
+        });
+        
+        // Prevent context menu
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Initialize the game
+        init();
+    </script>
+</body>
+</html>
